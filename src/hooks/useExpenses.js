@@ -1,68 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
 import toast from 'react-hot-toast';
-
-export const useExpenses = () => {
-  const [expenses, setExpenses] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const q = query(collection(db, 'expenses'), orderBy('date', 'desc'));
-    
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const expensesData = [];
-      querySnapshot.forEach((doc) => {
-        expensesData.push({ id: doc.id, ...doc.data() });
-      });
-      setExpenses(expensesData);
-      setLoading(false);
-    }, (error) => {
-      console.error('Error fetching expenses:', error);
-      // Use mock data for demo
-      setExpenses(mockExpenses);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const addExpense = async (expense) => {
-    try {
-      await addDoc(collection(db, 'expenses'), {
-        ...expense,
-        date: new Date(expense.date),
-        createdAt: new Date()
-      });
-      toast.success('Expense added successfully!');
-    } catch (error) {
-      console.error('Error adding expense:', error);
-      // Add to mock data for demo
-      const newExpense = {
-        id: Date.now().toString(),
-        ...expense,
-        date: new Date(expense.date),
-        createdAt: new Date()
-      };
-      setExpenses(prev => [newExpense, ...prev]);
-      toast.success('Expense added successfully!');
-    }
-  };
-
-  const deleteExpense = async (id) => {
-    try {
-      await deleteDoc(doc(db, 'expenses', id));
-      toast.success('Expense deleted successfully!');
-    } catch (error) {
-      console.error('Error deleting expense:', error);
-      // Remove from mock data for demo
-      setExpenses(prev => prev.filter(expense => expense.id !== id));
-      toast.success('Expense deleted successfully!');
-    }
-  };
-
-  return { expenses, loading, addExpense, deleteExpense };
-};
 
 // Mock data for demo purposes
 const mockExpenses = [
@@ -131,3 +68,37 @@ const mockExpenses = [
     description: 'Ride to downtown'
   }
 ];
+
+
+export const useExpenses = () => {
+  const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate fetching data by using the mock data
+    setTimeout(() => {
+      const sortedExpenses = mockExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setExpenses(sortedExpenses);
+      setLoading(false);
+    }, 500); // A small delay to show the loader
+  }, []);
+
+  const addExpense = async (expense) => {
+    const newExpense = {
+      id: Date.now().toString(),
+      ...expense,
+      date: new Date(expense.date),
+      createdAt: new Date()
+    };
+    const updatedExpenses = [newExpense, ...expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+    setExpenses(updatedExpenses);
+    toast.success('Expense added successfully!');
+  };
+
+  const deleteExpense = async (id) => {
+    setExpenses(prev => prev.filter(expense => expense.id !== id));
+    toast.success('Expense deleted successfully!');
+  };
+
+  return { expenses, loading, addExpense, deleteExpense };
+};
